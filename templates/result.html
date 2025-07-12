@@ -1,0 +1,427 @@
+{% extends "base.html" %} {% block title %}F319 Crawler - Kết quả{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-10">
+    <!-- Header -->
+    <div class="text-center mb-4">
+      <h2 class="text-primary">
+        <i class="fas fa-chart-line me-2"></i>
+        Kết quả Crawl
+      </h2>
+      <p class="text-muted">Job ID: <code>{{ job_id }}</code></p>
+    </div>
+
+    <!-- Status Card -->
+    <div class="card shadow-lg border-0 mb-4" id="statusCard">
+      <div class="card-header bg-info text-white">
+        <h4 class="mb-0">
+          <i class="fas fa-info-circle me-2"></i>
+          Trạng thái
+        </h4>
+      </div>
+      <div class="card-body">
+        <!-- Progress Bar -->
+        <div class="mb-3" id="progressContainer">
+          <div class="progress" style="height: 20px">
+            <div
+              class="progress-bar progress-bar-striped progress-bar-animated"
+              role="progressbar"
+              style="width: 0%"
+              id="progressBar"
+            >
+              <span id="progressText">Đang chuẩn bị...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Status Details -->
+        <div class="row">
+          <div class="col-md-6">
+            <h6><i class="fas fa-users me-2"></i>Target:</h6>
+            <p class="text-muted" id="targetUsers">
+              {{ job_data.username_id }}
+            </p>
+          </div>
+          <div class="col-md-6">
+            <h6><i class="fas fa-clock me-2"></i>Thời gian:</h6>
+            <p class="text-muted" id="elapsedTime">--</p>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6">
+            <h6><i class="fas fa-cogs me-2"></i>Mode:</h6>
+            <p class="text-muted">
+              {% if job_data.full_content %}
+              <i class="fas fa-file-alt"></i> Full Content {% if
+              job_data.get('max_full_content') == 0 %}
+              <span class="badge bg-warning">Tất cả posts</span>
+              {% elif job_data.get('max_full_content') == -1 %}
+              <span class="badge bg-info">Chỉ snippet</span>
+              {% elif job_data.get('max_full_content') %}
+              <span class="badge bg-success"
+                >{{ job_data.max_full_content }} posts</span
+              >
+              {% endif %} {% else %}
+              <i class="fas fa-bolt"></i> Snippet Mode {% endif %}
+            </p>
+          </div>
+          <div class="col-md-6">
+            <h6><i class="fas fa-database me-2"></i>Posts:</h6>
+            <p class="text-muted" id="postCount">--</p>
+          </div>
+        </div>
+
+        <!-- Multi-User Progress (hiện khi crawl multiple users) -->
+        <div class="row d-none" id="multiUserProgress">
+          <div class="col-md-4">
+            <h6><i class="fas fa-users me-2"></i>Users:</h6>
+            <p class="text-muted" id="userCount">--</p>
+          </div>
+          <div class="col-md-4">
+            <h6><i class="fas fa-check-circle me-2"></i>Hoàn thành:</h6>
+            <p class="text-muted" id="completedUsers">--</p>
+          </div>
+          <div class="col-md-4">
+            <h6><i class="fas fa-exclamation-triangle me-2"></i>Thất bại:</h6>
+            <p class="text-muted" id="failedUsers">--</p>
+          </div>
+        </div>
+
+        <!-- Status Message -->
+        <div class="alert alert-info" id="statusMessage">
+          <i class="fas fa-spinner fa-spin me-2"></i>
+          <span id="messageText">{{ job_data.message }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Multi-User Results Table (hiện khi crawl multiple users) -->
+    <div class="card shadow-lg border-0 mb-4 d-none" id="multiUserResultsCard">
+      <div class="card-header bg-primary text-white">
+        <h4 class="mb-0">
+          <i class="fas fa-users me-2"></i>
+          Kết quả từng User
+        </h4>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th><i class="fas fa-user"></i> User</th>
+                <th><i class="fas fa-check-circle"></i> Status</th>
+                <th><i class="fas fa-database"></i> Posts</th>
+                <th><i class="fas fa-download"></i> Download</th>
+              </tr>
+            </thead>
+            <tbody id="userResultsTable">
+              <!-- Động load từ JavaScript -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Result Card (hiện khi hoàn thành) -->
+    <div class="card shadow-lg border-0 mb-4 d-none" id="resultCard">
+      <div class="card-header bg-success text-white">
+        <h4 class="mb-0">
+          <i class="fas fa-check-circle me-2"></i>
+          Hoàn thành!
+        </h4>
+      </div>
+      <div class="card-body">
+        <div class="row text-center">
+          <div class="col-md-3">
+            <div class="stat-item mb-3">
+              <h3 class="text-success mb-1" id="finalPostCount">0</h3>
+              <p class="text-muted">Posts Crawled</p>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="stat-item mb-3">
+              <h3 class="text-info mb-1" id="finalUserCount">1</h3>
+              <p class="text-muted">Users</p>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="stat-item mb-3">
+              <h3 class="text-warning mb-1" id="finalFileSize">0 KB</h3>
+              <p class="text-muted">File Size</p>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="stat-item mb-3">
+              <h3 class="text-primary mb-1" id="finalDuration">0s</h3>
+              <p class="text-muted">Duration</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Download Buttons -->
+        <div class="text-center mt-3">
+          <!-- Main Download Button -->
+          <a
+            href="{{ url_for('download_file', job_id=job_id) }}"
+            class="btn btn-success btn-lg me-2"
+            id="downloadBtn"
+          >
+            <i class="fas fa-download me-2"></i>
+            <span id="downloadBtnText">Download CSV</span>
+          </a>
+
+          <!-- View Results Button (for multi-user) -->
+          <button
+            class="btn btn-outline-success btn-lg d-none"
+            id="viewResultsBtn"
+            onclick="toggleUserResults()"
+          >
+            <i class="fas fa-eye me-2"></i>
+            Xem chi tiết
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error Card (hiện khi có lỗi) -->
+    <div class="card shadow-lg border-0 mb-4 d-none" id="errorCard">
+      <div class="card-header bg-danger text-white">
+        <h4 class="mb-0">
+          <i class="fas fa-exclamation-triangle me-2"></i>
+          Có lỗi xảy ra
+        </h4>
+      </div>
+      <div class="card-body">
+        <div class="alert alert-danger" id="errorMessage">
+          <i class="fas fa-bug me-2"></i>
+          <span id="errorText">Đã xảy ra lỗi</span>
+        </div>
+
+        <div class="text-center">
+          <a href="{{ url_for('index') }}" class="btn btn-primary">
+            <i class="fas fa-arrow-left me-2"></i>
+            Thử lại
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="text-center">
+      <a href="{{ url_for('index') }}" class="btn btn-outline-primary">
+        <i class="fas fa-plus me-2"></i>
+        Crawl mới
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block scripts %}
+<script>
+  // Real-time status updates
+  const jobId = "{{ job_id }}";
+  let updateInterval;
+  let isMultiUser = false;
+
+  function toggleUserResults() {
+    const resultsCard = document.getElementById("multiUserResultsCard");
+    const viewBtn = document.getElementById("viewResultsBtn");
+
+    if (resultsCard.classList.contains("d-none")) {
+      resultsCard.classList.remove("d-none");
+      viewBtn.innerHTML = '<i class="fas fa-eye-slash me-2"></i>Ẩn chi tiết';
+    } else {
+      resultsCard.classList.add("d-none");
+      viewBtn.innerHTML = '<i class="fas fa-eye me-2"></i>Xem chi tiết';
+    }
+  }
+
+  function updateUserResultsTable(userResults) {
+    const tableBody = document.getElementById("userResultsTable");
+    tableBody.innerHTML = "";
+
+    userResults.forEach((result, index) => {
+      const row = document.createElement("tr");
+
+      // Status badge
+      let statusBadge = "";
+      let downloadCell = "";
+
+      if (result.status === "success") {
+        statusBadge = `<span class="badge bg-success">
+          <i class="fas fa-check me-1"></i>Thành công
+        </span>`;
+        downloadCell = `<a href="/download_individual/${jobId}/${result.filename}" 
+                            class="btn btn-sm btn-outline-success">
+          <i class="fas fa-download me-1"></i>Tải về
+        </a>`;
+      } else {
+        statusBadge = `<span class="badge bg-danger">
+          <i class="fas fa-times me-1"></i>Thất bại
+        </span>`;
+        downloadCell = `<span class="text-muted">
+          <i class="fas fa-minus"></i>
+        </span>`;
+      }
+
+      row.innerHTML = `
+        <td><code>${result.username}</code></td>
+        <td>${statusBadge}</td>
+        <td>${result.post_count || 0}</td>
+        <td>${downloadCell}</td>
+      `;
+
+      tableBody.appendChild(row);
+    });
+  }
+
+  function updateStatus() {
+    fetch(`/status/${jobId}`)
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("Status update:", data);
+
+        // Check if multi-user
+        if (data.total_users && data.total_users > 1) {
+          isMultiUser = true;
+          document
+            .getElementById("multiUserProgress")
+            .classList.remove("d-none");
+
+          // Update multi-user progress
+          document.getElementById("userCount").textContent = data.total_users;
+          document.getElementById("completedUsers").textContent =
+            data.completed_users || 0;
+          document.getElementById("failedUsers").textContent =
+            data.failed_users || 0;
+
+          // Update target display
+          document.getElementById(
+            "targetUsers"
+          ).textContent = `${data.total_users} users`;
+        }
+
+        // Update elapsed time
+        if (data.elapsed_time) {
+          document.getElementById("elapsedTime").textContent =
+            data.elapsed_time;
+        }
+
+        // Update post count
+        if (data.post_count) {
+          document.getElementById("postCount").textContent = data.post_count;
+        } else if (data.total_posts) {
+          document.getElementById("postCount").textContent = data.total_posts;
+        }
+
+        // Update message
+        const messageText = document.getElementById("messageText");
+        messageText.textContent = data.message || "Đang xử lý...";
+
+        // Update progress and cards based on status
+        const statusCard = document.getElementById("statusCard");
+        const resultCard = document.getElementById("resultCard");
+        const errorCard = document.getElementById("errorCard");
+        const progressBar = document.getElementById("progressBar");
+        const progressText = document.getElementById("progressText");
+        const statusMessage = document.getElementById("statusMessage");
+
+        switch (data.status) {
+          case "starting":
+            progressBar.style.width = "10%";
+            progressText.textContent = "Khởi tạo...";
+            statusMessage.className = "alert alert-info";
+            break;
+
+          case "running":
+            let progressPercent = 50;
+
+            // Calculate progress for multi-user
+            if (isMultiUser && data.total_users > 0) {
+              const completed = data.completed_users || 0;
+              const failed = data.failed_users || 0;
+              progressPercent = Math.round(
+                ((completed + failed) / data.total_users) * 100
+              );
+            }
+
+            progressBar.style.width = progressPercent + "%";
+            progressText.textContent = isMultiUser
+              ? `${data.completed_users || 0}/${data.total_users} users`
+              : "Đang crawl...";
+            statusMessage.className = "alert alert-warning";
+            break;
+
+          case "completed":
+            progressBar.style.width = "100%";
+            progressBar.className = "progress-bar bg-success";
+            progressText.textContent = "Hoàn thành!";
+
+            // Hide status card, show result card
+            statusCard.classList.add("d-none");
+            resultCard.classList.remove("d-none");
+
+            // Update result details
+            document.getElementById("finalPostCount").textContent =
+              data.total_posts || data.post_count || 0;
+            document.getElementById("finalUserCount").textContent =
+              data.total_users || 1;
+            document.getElementById("finalDuration").textContent =
+              data.elapsed_time || "--";
+
+            // Update download button for multi-user
+            if (isMultiUser) {
+              document.getElementById("downloadBtnText").textContent =
+                "Download Combined CSV";
+              document
+                .getElementById("viewResultsBtn")
+                .classList.remove("d-none");
+
+              // Update user results table
+              if (data.user_results) {
+                updateUserResultsTable(data.user_results);
+              }
+            }
+
+            // Stop updates
+            clearInterval(updateInterval);
+            break;
+
+          case "error":
+            progressBar.style.width = "100%";
+            progressBar.className = "progress-bar bg-danger";
+            progressText.textContent = "Lỗi!";
+
+            // Hide status card, show error card
+            statusCard.classList.add("d-none");
+            errorCard.classList.remove("d-none");
+
+            // Update error message
+            document.getElementById("errorText").textContent =
+              data.message || "Đã xảy ra lỗi";
+
+            // Stop updates
+            clearInterval(updateInterval);
+            break;
+        }
+      })
+      .catch((error) => {
+        console.error("Error fetching status:", error);
+      });
+  }
+
+  // Start status updates
+  updateStatus(); // Initial update
+  updateInterval = setInterval(updateStatus, 2000); // Update every 2 seconds
+
+  // Stop updates when page is hidden
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden && updateInterval) {
+      clearInterval(updateInterval);
+    } else if (!document.hidden) {
+      updateStatus();
+      updateInterval = setInterval(updateStatus, 2000);
+    }
+  });
+</script>
+{% endblock %}

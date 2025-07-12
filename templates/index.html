@@ -1,0 +1,456 @@
+{% extends "base.html" %} {% block title %}F319 Crawler - Trang chính{% endblock
+%} {% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <!-- Hero Section -->
+    <div class="text-center mb-5">
+      <div class="hero-icon mb-3">
+        <i class="fas fa-spider text-primary" style="font-size: 4rem"></i>
+      </div>
+      <h1 class="display-4 fw-bold text-primary">F319 Crawler</h1>
+      <p class="lead text-muted">
+        Crawl comments từ f319.com một cách nhanh chóng và hiệu quả
+      </p>
+      <div class="badge bg-success fs-6 px-3 py-2">
+        <i class="fas fa-users me-2"></i>
+        Hỗ trợ Multi-User Crawling
+      </div>
+    </div>
+
+    <!-- Main Form Card -->
+    <div class="card shadow-lg border-0">
+      <div class="card-header bg-primary text-white">
+        <h3 class="card-title mb-0">
+          <i class="fas fa-play-circle me-2"></i>
+          Bắt đầu Crawl
+        </h3>
+      </div>
+      <div class="card-body p-4">
+        <form
+          action="{{ url_for('start_crawl') }}"
+          method="POST"
+          id="crawlForm"
+        >
+          <!-- Username Input -->
+          <div class="mb-4">
+            <label for="username_id" class="form-label fw-bold">
+              <i class="fas fa-users me-2"></i>
+              Username.UserID (Single hoặc Multiple)
+            </label>
+            <input
+              type="text"
+              class="form-control form-control-lg"
+              id="username_id"
+              name="username_id"
+              placeholder="csdn.699927 hoặc csdn.699927, lamnguyenphu.493993, user2.123456"
+              required
+            />
+            <div class="form-text">
+              <i class="fas fa-info-circle me-1"></i>
+              <strong>Single:</strong> username.userid
+              <br />
+              <strong>Multiple:</strong> Cách nhau bằng dấu phẩy
+              <br />
+              <strong>Format:</strong> username.userid (lấy từ URL profile
+              f319.com)
+            </div>
+
+            <!-- User Count Preview -->
+            <div class="mt-2">
+              <div
+                class="alert alert-info py-2"
+                id="userCountPreview"
+                style="display: none"
+              >
+                <i class="fas fa-users me-2"></i>
+                <span id="userCountText">0 users sẽ được crawl</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Options -->
+          <div class="mb-4">
+            <div class="card bg-light text-dark">
+              <div class="card-body">
+                <h6 class="card-title">
+                  <i class="fas fa-cogs me-2"></i>
+                  Tùy chọn
+                </h6>
+
+                <div class="form-check mb-3">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    id="full_content"
+                    name="full_content"
+                  />
+                  <label class="form-check-label" for="full_content">
+                    <strong>Lấy full content</strong>
+                    <small class="text-muted d-block">
+                      Crawl chi tiết hơn nhưng chậm hơn (khuyên dùng cho &lt; 50
+                      posts/user)
+                    </small>
+                  </label>
+                </div>
+
+                <!-- Full Content Control -->
+                <div
+                  class="full-content-options"
+                  id="fullContentOptions"
+                  style="display: none"
+                >
+                  <div class="border rounded p-3 bg-white">
+                    <h6 class="text-primary mb-3">
+                      <i class="fas fa-sliders-h me-2"></i>
+                      Kiểm soát Full Content
+                    </h6>
+
+                    <div class="mb-3">
+                      <label for="max_full_content" class="form-label">
+                        <strong>Số posts lấy full content:</strong>
+                      </label>
+                      <select
+                        class="form-select"
+                        id="max_full_content"
+                        name="max_full_content"
+                      >
+                        <option value="0" selected>
+                          Tất cả posts (có thể mất nhiều thời gian)
+                        </option>
+                        <option value="10">
+                          10 posts đầu tiên (khuyên dùng)
+                        </option>
+                        <option value="20">20 posts đầu tiên</option>
+                        <option value="50">50 posts đầu tiên</option>
+                        <option value="100">100 posts đầu tiên</option>
+                        <option value="-1">Chỉ lấy snippet (nhanh nhất)</option>
+                      </select>
+                      <div class="form-text">
+                        <i class="fas fa-info-circle me-1"></i>
+                        <span id="fullContentAdvice">
+                          <strong>Lưu ý:</strong> Lấy full content cho tất cả
+                          posts có thể mất nhiều thời gian.
+                        </span>
+                      </div>
+                    </div>
+
+                    <div class="alert alert-warning py-2">
+                      <i class="fas fa-exclamation-triangle me-2"></i>
+                      <strong>Khuyến nghị:</strong> Với >50 posts/user, nên chọn
+                      giới hạn để tránh quá tải
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Submit Button -->
+          <div class="d-grid">
+            <button type="submit" class="btn btn-primary btn-lg">
+              <i class="fas fa-rocket me-2"></i>
+              Bắt đầu Crawl
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Features Section -->
+    <div class="row mt-5">
+      <div class="col-md-4 mb-3">
+        <div class="card h-100 border-0 shadow-sm">
+          <div class="card-body text-center">
+            <div class="feature-icon mb-3">
+              <i class="fas fa-bolt text-warning" style="font-size: 2.5rem"></i>
+            </div>
+            <h5 class="card-title">Nhanh chóng</h5>
+            <p class="card-text text-muted">
+              Sử dụng search-based approach để crawl hiệu quả
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4 mb-3">
+        <div class="card h-100 border-0 shadow-sm">
+          <div class="card-body text-center">
+            <div class="feature-icon mb-3">
+              <i
+                class="fas fa-users text-success"
+                style="font-size: 2.5rem"
+              ></i>
+            </div>
+            <h5 class="card-title">Multi-User</h5>
+            <p class="card-text text-muted">
+              Crawl nhiều users cùng lúc và tạo file combined
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4 mb-3">
+        <div class="card h-100 border-0 shadow-sm">
+          <div class="card-body text-center">
+            <div class="feature-icon mb-3">
+              <i
+                class="fas fa-download text-info"
+                style="font-size: 2.5rem"
+              ></i>
+            </div>
+            <h5 class="card-title">Dễ dàng</h5>
+            <p class="card-text text-muted">
+              Kết quả được xuất ra file CSV dễ dàng phân tích
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="card mt-4 border-info">
+      <div class="card-header bg-info text-white">
+        <h5 class="mb-0">
+          <i class="fas fa-question-circle me-2"></i>
+          Hướng dẫn sử dụng
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6">
+            <h6 class="text-primary">
+              <i class="fas fa-user me-2"></i>
+              Single User
+            </h6>
+            <ol class="mb-3">
+              <li class="mb-2">
+                <strong>Truy cập profile:</strong> Vào f319.com và tìm profile
+                user muốn crawl
+              </li>
+              <li class="mb-2">
+                <strong>Lấy username.userid:</strong> Từ URL như
+                <code>f319.com/members/lamnguyenphu.493993/</code>
+              </li>
+              <li class="mb-2">
+                <strong>Nhập và crawl:</strong> Paste vào form trên và bấm "Bắt
+                đầu Crawl"
+              </li>
+              <li class="mb-0">
+                <strong>Download kết quả:</strong> Sau khi hoàn thành, download
+                file CSV
+              </li>
+            </ol>
+          </div>
+          <div class="col-md-6">
+            <h6 class="text-success">
+              <i class="fas fa-users me-2"></i>
+              Multiple Users
+            </h6>
+            <ol class="mb-3">
+              <li class="mb-2">
+                <strong>Nhập nhiều users:</strong> Cách nhau bằng dấu phẩy
+              </li>
+              <li class="mb-2">
+                <strong>Ví dụ:</strong>
+                <br /><code
+                  >csdn.699927, lamnguyenphu.493993, user2.123456</code
+                >
+              </li>
+              <li class="mb-2">
+                <strong>Crawl tự động:</strong> Hệ thống sẽ crawl từng user tuần
+                tự
+              </li>
+              <li class="mb-0">
+                <strong>Files kết quả:</strong> Nhận file riêng cho từng user +
+                file combined
+              </li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block scripts %}
+<script>
+  // Parse multiple users function
+  function parseMultipleUsers(input) {
+    const users = [];
+    const lines = input.trim().split(",");
+
+    for (const line of lines) {
+      const user = line.trim();
+      if (user && user.includes(".")) {
+        users.push(user);
+      }
+    }
+
+    // Remove duplicates
+    const uniqueUsers = [...new Set(users)];
+    return uniqueUsers;
+  }
+
+  // Update user count preview
+  function updateUserCountPreview() {
+    const input = document.getElementById("username_id");
+    const preview = document.getElementById("userCountPreview");
+    const countText = document.getElementById("userCountText");
+    console.log("input", input);
+    const users = parseMultipleUsers(input.value);
+
+    if (users.length > 0) {
+      countText.textContent = `${users.length} user${
+        users.length > 1 ? "s" : ""
+      } sẽ được crawl`;
+      preview.style.display = "block";
+
+      // Change color based on count
+      preview.className =
+        "alert py-2 " + (users.length > 1 ? "alert-success" : "alert-info");
+
+      console.log("Preview shown with class:", preview.className);
+    } else {
+      preview.style.display = "none";
+      console.log("Preview hidden - no valid users found");
+    }
+  }
+
+  // Debounce function to prevent rapid updates
+  function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
+  }
+
+  // Create debounced version of the update function
+  const debouncedUpdatePreview = debounce(updateUserCountPreview, 300);
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const usernameInput = document.getElementById("username_id");
+    const fullContentCheckbox = document.getElementById("full_content");
+    const fullContentOptions = document.getElementById("fullContentOptions");
+    const maxFullContentSelect = document.getElementById("max_full_content");
+    const fullContentAdvice = document.getElementById("fullContentAdvice");
+
+    // Toggle full content options
+    fullContentCheckbox.addEventListener("change", function () {
+      if (this.checked) {
+        fullContentOptions.style.display = "block";
+      } else {
+        fullContentOptions.style.display = "none";
+      }
+    });
+
+    // Update advice text based on selection
+    maxFullContentSelect.addEventListener("change", function () {
+      const value = this.value;
+      let advice = "";
+
+      switch (value) {
+        case "0":
+          advice =
+            "<strong>Lưu ý:</strong> Lấy full content cho tất cả posts có thể mất nhiều thời gian.";
+          break;
+        case "10":
+          advice =
+            "<strong>Khuyên dùng:</strong> Lấy 10 posts đầu tiên để kiểm tra chất lượng.";
+          break;
+        case "20":
+        case "50":
+          advice =
+            "<strong>Tốt:</strong> Số lượng phù hợp để có được dữ liệu chi tiết.";
+          break;
+        case "100":
+          advice =
+            "<strong>Cảnh báo:</strong> Có thể mất thời gian dài với 100 posts.";
+          break;
+        case "-1":
+          advice =
+            "<strong>Nhanh nhất:</strong> Chỉ lấy snippet content, phù hợp với dữ liệu lớn.";
+          break;
+      }
+
+      fullContentAdvice.innerHTML =
+        '<i class="fas fa-info-circle me-1"></i>' + advice;
+    });
+
+    // Add input event listener with debouncing
+    usernameInput.addEventListener("input", function (event) {
+      debouncedUpdatePreview();
+    });
+
+    usernameInput.addEventListener("paste", function (event) {
+      setTimeout(debouncedUpdatePreview, 50);
+    });
+
+    // Initial call
+    updateUserCountPreview();
+
+    // Form validation
+    document
+      .getElementById("crawlForm")
+      .addEventListener("submit", function (e) {
+        console.log("Form submission started");
+        const usernameInput = document.getElementById("username_id");
+        const value = usernameInput.value.trim();
+        console.log("Form input value:", value);
+
+        if (!value) {
+          console.log("Form validation failed: empty input");
+          e.preventDefault();
+          alert("Vui lòng nhập ít nhất một username.userid");
+          usernameInput.focus();
+          return false;
+        }
+
+        // Parse và validate users
+        const users = parseMultipleUsers(value);
+        console.log("Form validation - parsed users:", users);
+
+        if (users.length === 0) {
+          console.log("Form validation failed: no valid users found");
+          e.preventDefault();
+          alert(
+            "Không tìm thấy user nào hợp lệ. Vui lòng nhập đúng format username.userid\n" +
+              "Ví dụ: csdn.699927 hoặc lamnguyenphu.493993"
+          );
+          usernameInput.focus();
+          return false;
+        }
+
+        // Validate từng user
+        for (const user of users) {
+          console.log("Validating user:", user);
+          if (!user.includes(".")) {
+            console.log("Form validation failed: invalid user format:", user);
+            e.preventDefault();
+            alert(
+              `Format không hợp lệ: ${user}\n` +
+                "Vui lòng nhập đúng format username.userid\n" +
+                "Ví dụ: csdn.699927 hoặc lamnguyenphu.493993"
+            );
+            usernameInput.focus();
+            return false;
+          }
+        }
+
+        console.log("Form validation passed! Submitting...");
+        // Show loading state
+        const submitBtn = this.querySelector('button[type="submit"]');
+        if (users.length > 1) {
+          submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i>Đang chuẩn bị crawl ${users.length} users...`;
+        } else {
+          submitBtn.innerHTML =
+            '<i class="fas fa-spinner fa-spin me-2"></i>Đang chuẩn bị...';
+        }
+        submitBtn.disabled = true;
+      });
+  });
+</script>
+{% endblock %}
